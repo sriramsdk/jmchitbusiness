@@ -59,10 +59,10 @@
     <div class="container-fluid">
       <ul class="navbar-nav me-auto">
         <li class="nav-item">
-          <a class="nav-link ps-3 ms-2" href="#">Customers</a>
+          <a class="nav-link ps-3 ms-2" href="<?= base_url('/dashboard')?>">Customers</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link border-start ps-3 ms-2" href="#">Groups</a>
+          <a class="nav-link border-start ps-3 ms-2" href="<?= base_url('/groups')?>">Groups</a>
         </li>
       </ul>
       <span class="navbar-text text-muted">

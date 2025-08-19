@@ -23,7 +23,9 @@ $routes->post('/customer_update','AdminController::customer_update');
 $routes->post('/get_group_details','AdminController::group_details');
 $routes->get('/balance_sheet','AdminController::balance_sheet');
 $routes->get('/due_report','AdminController::due_report');
-// Add more routes as needed...
+$routes->get('/groups','AdminController::groups_list');
+$routes->get('/group_add','AdminController::group_add');
+$routes->post('/group_add','AdminController::group_insert');
 
 // Environment-based routes
 if (is_file(APPPATH . 'Config/' . ENVIRONMENT . '/Routes.php')) {

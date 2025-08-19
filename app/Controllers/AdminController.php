@@ -937,4 +937,83 @@ class AdminController extends BaseController{
             ]);
         }
     }
+
+    public function groups_list(){
+        if(!$this->loggedin){
+            return redirect()->to('/login');
+        }
+
+        $groups = $this->groups->orderBy('group_name','ASC')->get()->getResultArray();
+        $data = [
+            'groups' => $groups
+        ];
+
+        return view('layout/header').view('admin/group_list',$data).view('layout/footer');
+    }
+
+    public function group_add(){
+        if(!$this->loggedin){
+            return redirect()->to('/login');
+        }
+        return view('layout/header').view('admin/group_add').view('layout/footer');
+    }
+
+    public function group_insert(){
+        if(!$this->loggedin){
+            return redirect()->to('/login');
+        }
+
+        $rules = [
+            'group_name' => [
+                'label' => "Group Name",
+                'rules' => "required"
+            ]
+        ];
+
+        $data = $this->request->getPost();
+
+        if(!$this->validateData($data, $rules)){
+            return $this->response->setJSON([
+                'status' => 'error',
+                'errors' => $this->validation->getErrors()
+            ]);
+        }
+        
+        $validData = $this->validation->getValidated();
+        $check_group = $this->groups->where('group_name',$validData['group_name'])->first();
+
+        if($check_group){
+            return $this->response->setJSON([
+                'status' => 'error',
+                'errors' => ['Group Name Already exists']
+            ]);
+        }
+        
+        $validData['contact_no'] = $data['contact_no'] ?? null;
+        $validData['address'] = $data['address'] ?? null;
+        $validData['job_details'] = $data['job_details'] ?? null;
+
+        $group_save = [
+            'group_name' => $validData['group_name'],
+            'address' => $validData['address'],
+            'job_details' => $validData['job_details'],
+            'contactno' => $validData['contact_no'],
+            'status' => 1
+        ];
+
+
+        $insert_group = $this->groups->insert($group_save);
+
+        if($insert_group){
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => "Group Added successfully"
+            ]);
+        }else{
+            return $this->response->setJSON([
+                'status' => 'error',
+                'errors' => 'Group Not Saved'
+            ]);
+        }
+    }
 }
