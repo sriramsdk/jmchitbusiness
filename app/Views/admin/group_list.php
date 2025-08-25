@@ -31,7 +31,7 @@
                         <td>Inactive</td>
                     <?php } ?>
                     <td>
-                        <a href="#" target="_blanck" class="btn btn-sm btn-info" title="View"><i class="fas fa-eye"></i></a>
+                        <a href="<?= base_url('/group_view').'/'.$value['group_id'];?>" target="_blanck" class="btn btn-sm btn-info" title="View"><i class="fas fa-eye"></i></a>
                         <a href="#" target="_blanck" class="btn btn-sm btn-primary" title="View"><i class="fas fa-edit"></i></a>
                         <a href="#" target="_blanck" class="btn btn-sm btn-danger" title="View"><i class="fas fa-trash-alt"></i></a>
                     </td>

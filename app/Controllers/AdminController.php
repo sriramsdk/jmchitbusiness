@@ -1016,4 +1016,258 @@ class AdminController extends BaseController{
             ]);
         }
     }
+
+    public function group_view($id){
+        if(!$this->loggedin){
+            return redirect()->to('/login');
+        }
+
+        $group_data = $this->groups->where('group_id',$id)->first();
+        $data = [
+            'group_data' => $group_data
+        ];
+
+        return view('layout/header').view('admin/group_view',$data).view('layout/footer');
+    }
+
+    public function Customers_list_data(){
+        if($this->loggedin){
+
+            $request = service('request');
+            // echo "<pre>";print_r($request);exit();
+            $search = $request->getPost('search')['value'];
+            $start = $request->getPost('start');
+            $length = $request->getPost('length');
+            $order = $request->getPost('order');
+            $columns = $request->getPost('columns');
+
+            $orderColumnIndex = $order[0]['column'];
+            $orderColumnName  = $columns[$orderColumnIndex]['data'];
+            $orderDir         = $order[0]['dir'];
+
+            $columnMap = [
+                'customer_id'    => 'c.customer_id',
+                'book_name'      => 'c.book_name',
+                'group_name'     => 'g.group_name',
+                'collector_name' => 'cb.name'
+            ];
+
+            $orderByColumn = $columnMap[$orderColumnName] ?? 'c.customer_id';
+
+            $builder = $this->db->table('customers c')
+                ->select('
+                    c.customer_id,c.group_id,c.month_si,c.starts_with_months,c.book_name,c.care_of_name,c.is_group_address,c.address_id,c.real_doj,c.guessed_doj,c.aprox_doj,c.due_amount,c.months,c.amount_need_on,c.total_intrest_paid,c.intrest_paid_details,c.pending_trust_percent,c.intrest_trust_percent,c.collection_by,c.current_status,c.status,c.closed_on,c.closed_date_by_us,c.closed_with_pending,c.closed_with_intrest, 
+                    ca.group_id_no_need,ca.forc,ca.customer_name,ca.address,ca.job_details,ca.contact_no, 
+                    agd.amount_given_id,agd.amount_given_date,agd.actual_amount_given,agd.given_amount,agd.deduction_amount,agd.balance_given_amount,agd.amount_given_method, agd.book_entry, agd.given_by, agd.cheque_ft_transfer_details, agd.received_documents, agd.remarks_amt_calc,
+                    g.group_name, 
+                    cb.name as name
+                ')
+                ->join('customers_address ca', 'c.address_id = ca.address_id', 'left')
+                ->join('amount_given_details agd', 'c.customer_id = agd.customer_id', 'left outer')
+                ->join('groups g', 'c.group_id = g.group_id', 'left')
+                ->join('colection_by cb', 'c.collection_by = cb.id', 'left')
+                ->where('c.status', 1);
+            if(!empty($request->getPost('group_id'))){
+                $builder->where('c.group_id',$request->getPost('group_id'));
+            }
+            $totalBuilder = $this->db->table('customers c')->select('COUNT(DISTINCT c.customer_id) as total');
+            $recordsTotal = $totalBuilder->where('c.status', 1)->get()->getRow()->total;
+
+
+            if (!empty($search)) {
+                $builder->groupStart()
+                    ->Like('c.book_name', $search)
+                    ->orLike('ca.forc', $search)->orLike('c.care_of_name', $search)
+                    ->orLike('g.group_name', $search)
+                    ->orLike('cb.name', $search)
+                    ->groupEnd();
+            }
+
+            $filteredBuilder = $this->db->table('customers c')->select('COUNT(DISTINCT c.customer_id) as filtered,ca.*')
+            ->join('customers_address ca', 'c.address_id = ca.address_id', 'left')
+                ->join('groups g', 'c.group_id = g.group_id', 'left')
+                ->join('colection_by cb', 'c.collection_by = cb.id', 'left')
+                ->where('c.status', 1);
+            if(!empty($request->getPost('group_id'))){
+                $filteredBuilder->where('c.group_id',$request->getPost('group_id'));
+            }
+
+            if (!empty($search)) {
+                $filteredBuilder->groupStart()
+                    ->like('c.book_name', $search)
+                    ->orLike('ca.forc', $search)->orLike('c.care_of_name', $search)
+                    ->orLike('g.group_name', $search)
+                    ->orLike('cb.name', $search)
+                    ->groupEnd();
+            }
+
+            $recordsFiltered = $filteredBuilder->get()->getRow()->filtered;
+
+            $builder->orderBy('DATE_FORMAT(c.guessed_doj,"%Y-%m-%d") ASC', false)->orderBy($orderByColumn, $orderDir)->groupBy('c.customer_id')->limit($length, $start);
+            // echo $builder->getCompiledSelect(); exit; 
+
+            $customer_details = $builder->get()->getResultArray();
+            $data = [];
+
+            $paid_m = (isset($_POST['paid_given_det']) && $_POST['paid_given_det'] == 'lm') 
+                ? date('Y-m', strtotime('last month')) 
+                : date('Y-m');
+
+            $today_month_start = strtotime(date('Y-m-01'));
+
+            foreach ($customer_details as $key => $csdetails) {
+                $customer_id = $csdetails['customer_id'];
+                $due_amount = $csdetails['due_amount'];
+                $months = $csdetails['months'];
+                $guessed_doj = strtotime(date('Y-m-01', strtotime($csdetails['guessed_doj'])));
+
+                $cm = 0;
+                $date_ptr = $guessed_doj;
+                while ($date_ptr <= $today_month_start) {
+                    
+                    $date_ptr = strtotime('+1 month', $date_ptr);
+                    $cm++;
+                }
+                $pending_interest = [];
+                // $pending_interest = $this->return_chit_pending_int($csdetails['customer_id'], $cm, $csdetails['guessed_doj'], $csdetails['months'], $csdetails['due_amount']);
+                $pending_payment = 0;
+                $need_paid = 0;
+                // if(($cm-1)<=$csdetails['months'])
+                // {
+                //     // $need_paid=($cm-1)*$csdetails['due_amount'];
+                //     // $pending_payment = $need_paid-$pending_interest['paid_amount'];
+                
+                // }
+                // else 
+                // {
+                //     // $need_paid = $csdetails['due_amount']*$csdetails['months'];
+                //     // $pending_payment = $need_paid-$pending_interest['paid_amount'];
+                // }
+
+                $cm_paid = 0;
+                $cm_paid = $this->cm_paid($customer_id, $paid_m);
+                $upto_last_month_paid_month = 0;
+                // $upto_last_month_paid_month = $pending_interest['paid_amount']/$csdetails['due_amount'];
+
+                $amt_giv_date = trim($csdetails['amount_given_date']);
+                $day_of_given = '';
+                if(strlen($amt_giv_date)==10)
+				{
+                    if(date('M-Y',strtotime($amt_giv_date)) == date('M-Y')){
+						$day_of_given=date('d',strtotime($amt_giv_date));
+                    }
+                    $amt_giv_date=date('M-y',strtotime($amt_giv_date));
+                }else{
+                    $amt_giv_date = $csdetails['amount_given_date'];
+                }
+
+                $p_month = '';
+                $have_to_give = '';
+                // if($csdetails['amount_need_on'] != '' || date('M',strtotime($csdetails['amount_given_date'])) == date('M') )
+                // {
+                //     $p_month = $csdetails['amount_need_on'];
+                //     $have_to_give = $this->given_amount($csdetails['due_amount'],$csdetails['months'],$cm);
+                // }
+                // else
+                // {
+                //     $have_to_give='';
+                // }
+
+                // if(strlen($p_month)==10)
+                // {
+                //     $p_month=date('M',strtotime($p_month));
+                // }
+
+                // if($day_of_given>0){
+	            //     $p_month=ucwords(date('M'));
+                // }
+
+                // if(ucwords($p_month) != ucwords(date('M'))){
+                //     $have_to_give=0;
+                // }
+                $given_amount = '';
+                // if($csdetails['given_amount'] == 0){
+				// 	$given_amount = '';
+                // }else{
+				// 	$given_amount = $csdetails['given_amount'];
+                // }
+
+                // if($have_to_give>0 and ($given_amount<$have_to_give or $given_amount>$have_to_give))
+                // {
+                //     if($given_amount!=''){
+                //         // $given_amount = $given_amount;
+                //         // $have_to_give = $have_to_give;
+                //     }else{
+                //         $given_amount = '';
+                //         $have_to_give = '';
+                //     }
+                    
+                // }
+                // else if($given_amount==$have_to_give)
+                // {
+                //     if($have_to_give==0){
+                //         // $given_amount = '';
+                //         $have_to_give = '';
+                //     }else{
+                //         // $given_amount = '';
+                //         $have_to_give = $have_to_give;
+                //     }
+                // }
+                // else
+                // {
+                //     if($have_to_give==0){
+                //         // $given_amount = '';
+                //         $have_to_give = '';
+                //     }else{
+                //         // $given_amount = '';
+                //         $have_to_give = $have_to_give;
+                //     }
+                // }
+
+                if($csdetails['guessed_doj'] != '0000-00-00'){
+					$code_no = date('my',strtotime($csdetails['guessed_doj'])).'-'.$csdetails['month_si'];
+                }else{
+					$code_no = $csdetails['month_si'];
+                }
+
+                $data[$key] = [
+                    'customer_id'    => $csdetails['customer_id'],
+                    'customer_name'  => $csdetails['book_name'],
+                    'forc'           => !empty($csdetails['care_of_name']) ? $csdetails['care_of_name'] : $csdetails['forc'],
+                    // 'cm_paid_dates'  => ($pending_interest['cm_paid_dates'])?$pending_interest['cm_paid_dates']:'',
+                    'cm_paid_dates'  => '',
+                    'cm_paid'        => $cm_paid,
+                    'due_amount'     => $due_amount,
+                    'pending'        => ($pending_payment != 0 || $pending_payment != '') 
+                                        ? $pending_payment 
+                                        : $pending_payment,
+                    // 'interest'       => ($pending_interest['interest'])?(($pending_interest['interest']>0)?round($pending_interest['interest'],2):0):0,
+                    'interest'       => '',
+                    'cm'             => $cm,
+                    'tm'             => $csdetails['months'],
+                    'pm'             => round($upto_last_month_paid_month,2),
+                    'tpaid'          => !empty($pending_interest['paid_amount'])?$pending_interest['paid_amount']:"",
+                    'tnt'            => $amt_giv_date,
+                    'dt'             => '',
+                    'togiv'          => $have_to_give,
+                    'ask'            => $p_month,
+                    'code'           => $code_no,
+                    'group'          => $csdetails['group_name'],
+                    'cby'            => substr($csdetails['name'],0,1),
+                    'action'         => '<a href="'.base_url('customer_view/' . $csdetails['customer_id']).'" target="_blanck" class="btn         btn-sm btn-info" title="View"><i class="fas fa-eye"></i></a>
+                                        <a href="'.base_url('customer_edit/' . $csdetails['customer_id']).'" target="_blanck" class="btn btn-sm
+                                        btn-primary" title="Edit"><i class="fas fa-edit"></i></a>'
+                ];
+            }
+
+            return $this->response->setJSON([
+                'draw' => intval($request->getPost('draw')),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $data
+            ]);
+        }else{
+            return redirect()->to('/login');
+        }
+    }
 }

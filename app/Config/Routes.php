@@ -15,6 +15,7 @@ $routes->get('/login', 'AuthController::index');
 $routes->post('/login', 'AuthController::login');
 $routes->get('/dashboard','AdminController::index');
 $routes->post('/customers_list','AdminController::Customers_list');
+$routes->post('/customers_list_data','AdminController::Customers_list_data');
 $routes->get('/customer_view/(:num)','AdminController::customer_view/$1');
 $routes->get('/customer_edit/(:num)','AdminController::customer_edit/$1');
 $routes->get('/customer_add','AdminController::customer_add');
@@ -26,6 +27,7 @@ $routes->get('/due_report','AdminController::due_report');
 $routes->get('/groups','AdminController::groups_list');
 $routes->get('/group_add','AdminController::group_add');
 $routes->post('/group_add','AdminController::group_insert');
+$routes->get('/group_view/(:num)','AdminController::group_view/$1');
 
 // Environment-based routes
 if (is_file(APPPATH . 'Config/' . ENVIRONMENT . '/Routes.php')) {
