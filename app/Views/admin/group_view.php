@@ -12,7 +12,7 @@
                             <label class="control-label h6 mx-1" for="group_name">Group Name :</label>
                         </div>
                         <div class="col-md-6">
-                            <?= $group_data['group_name'];?>
+                            <?= !empty($group_data['group_name'])?$group_data['group_name']:"N/A";?>
                         </div>
                     </div>
                     <div class="form-group d-flex align-items-center col-md-5">
@@ -20,7 +20,7 @@
                             <label class="control-label h6 mx-1" for="contact_no">Contact No :</label>
                         </div>
                         <div class="col-md-6">
-                            <?= $group_data['contactno'];?>
+                            <?= !empty($group_data['contactno'])?$group_data['contactno']:"N/A";?>
                         </div>
                     </div>
                 </div>
@@ -30,13 +30,13 @@
                     <div class="form-group d-flex align-items-center col-md-5">
                         <label class="control-label h6 mx-2" for="address">Address : </label>
                         <div class="col-md-8">
-                            <?= $group_data['address'];?>
+                            <?= !empty($group_data['address'])?$group_data['address']:"N/A";?>
                         </div>
                     </div>
                     <div class="form-group d-flex align-items-center col-md-4">
                         <label class="control-label h6 mx-2" for="job_details">Job details :</label>
                         <div class="col-md-8">
-                            <?= $group_data['job_details'];?>
+                            <?= !empty($group_data['job_details'])?$group_data['job_details']:"N/A";?>
                         </div>
                     </div>
                 </div>

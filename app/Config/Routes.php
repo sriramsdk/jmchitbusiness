@@ -28,6 +28,9 @@ $routes->get('/groups','AdminController::groups_list');
 $routes->get('/group_add','AdminController::group_add');
 $routes->post('/group_add','AdminController::group_insert');
 $routes->get('/group_view/(:num)','AdminController::group_view/$1');
+$routes->get('/group_edit/(:num)','AdminController::group_edit/$1');
+$routes->post('/group_update','AdminController::group_update');
+$routes->post('/group_delete','AdminController::group_delete');
 
 // Environment-based routes
 if (is_file(APPPATH . 'Config/' . ENVIRONMENT . '/Routes.php')) {

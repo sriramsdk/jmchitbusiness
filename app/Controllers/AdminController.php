@@ -1270,4 +1270,114 @@ class AdminController extends BaseController{
             return redirect()->to('/login');
         }
     }
+
+    public function group_edit($id){
+        if(!$this->loggedin){
+            return redirect()->to('/login');
+        }
+
+        $group_data = $this->groups->where('group_id',$id)->first();
+        $data = [
+            'group_data' => $group_data
+        ];
+
+        return view('layout/header').view('admin/group_edit',$data).view('layout/footer');
+    }
+
+    public function group_update(){
+        if(!$this->loggedin){
+            return redirect()->to('/login');
+        }
+
+        $rules = [
+            'group_name' => [
+                'label' => "Group Name",
+                'rules' => "required"
+            ]
+        ];
+
+        $data = $this->request->getPost();
+
+        if(!$this->validateData($data, $rules)){
+            return $this->response->setJSON([
+                'status' => 'error',
+                'errors' => $this->validation->getErrors()
+            ]);
+        }
+        
+        $validData = $this->validation->getValidated();
+        $check_group = $this->groups->where('group_id',$data['group_id'])->first();
+
+        if($validData['group_name'] !== $check_group['group_name']){
+            $check_group_exist = $this->groups->where('group_id',$validData['group_name'])->first();
+            if($check_group_exist){
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'errors' => ['Group Name Already exists']
+                ]);
+            }
+        }
+
+        $group_id = $data['group_id'];
+        $validData['contact_no'] = $data['contact_no'] ?? null;
+        $validData['address'] = $data['address'] ?? null;
+        $validData['job_details'] = $data['job_details'] ?? null;
+
+        $group_update = [
+            'group_name' => $validData['group_name'],
+            'address' => $validData['address'],
+            'job_details' => $validData['job_details'],
+            'contactno' => $validData['contact_no'],
+            'status' => 1
+        ];
+
+
+        $insert_group = $this->groups->update($group_id,$group_update);
+
+        if($insert_group){
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => "Group Updated successfully"
+            ]);
+        }else{
+            return $this->response->setJSON([
+                'status' => 'error',
+                'errors' => 'Group Not Updated'
+            ]);
+        }
+    }
+
+    public function group_delete(){
+        if(!$this->loggedin){
+            return redirect()->to('/login');
+        }
+
+        $data = $this->request->getPost();
+        $group_id = $data['group_id'];
+
+        $check_customers = $this->customers->where('group_id',$group_id)->countAllResults();
+
+        if($check_customers > 0){
+            return $this->response->setJSON([
+                'title' => 'Error!',
+                'status' => 'error',
+                'message' => 'Customers available in this group, cannot be deleted'
+            ]);
+        }
+
+        $delete_group = $this->groups->delete($group_id);
+        if($delete_group){
+            return $this->response->setJSON([
+                'title' => 'Deleted!',
+                'status' => 'success',
+                'message' => 'Group deleted Successfully'
+            ]);
+        }else{
+            return $this->response->setJSON([
+                'title' => 'Error!',
+                'status' => 'error',
+                'message' => 'Failed to delete group'
+            ]);
+        }
+    }
 }

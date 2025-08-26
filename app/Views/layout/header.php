@@ -70,6 +70,7 @@
       </span>
     </div>
   </nav>
-
+  <!-- SweetAlert -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <div class="container-fluid d-flex align-items-center justify-content-center">
 <?php } ?>

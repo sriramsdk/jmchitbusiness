@@ -67,7 +67,7 @@ $('#login_form').on('submit', function(e){
             }
         },
         error: function(xhr,code,status){
-            console.log(status);
+            $('.invalid-error').removeClass('d-none').addClass('alert alert-danger').text(status);
         }
     });
 });
