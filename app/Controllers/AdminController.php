@@ -266,7 +266,13 @@ class AdminController extends BaseController{
                     'cby'            => substr($csdetails['name'],0,1),
                     'action'         => '<a href="'.base_url('customer_view/' . $csdetails['customer_id']).'" target="_blanck" class="btn         btn-sm btn-info" title="View"><i class="fas fa-eye"></i></a>
                                         <a href="'.base_url('customer_edit/' . $csdetails['customer_id']).'" target="_blanck" class="btn btn-sm
-                                        btn-primary" title="Edit"><i class="fas fa-edit"></i></a>'
+                                        btn-primary" title="Edit"><i class="fas fa-edit"></i></a>
+                                        <a href="'.base_url('customer_edit/' . $csdetails['customer_id']).'" target="_blanck" class="btn btn-sm
+                                        btn-warning" title="Status"><i class="fa-solid fa-square-poll-vertical"></i></a>
+                                        <a href="'.base_url('customer_edit/' . $csdetails['customer_id']).'" target="_blanck" class="btn btn-sm
+                                        btn-secondary" title="Status">A.E</a>
+                                        <a href="'.base_url('customer_edit/' . $csdetails['customer_id']).'" target="_blanck" class="btn btn-sm
+                                        btn-secondary" title="Status">A.G</a>'
                 ];
             }
 
