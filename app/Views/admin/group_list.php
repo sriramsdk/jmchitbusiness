@@ -51,7 +51,7 @@
         $('.delete_group').on('click',function(){
             var group_id = $(this).data('id');
             Swal.fire({
-                title: "Are you sure?",
+                title: "Are you sure want to delete?",
                 text: "This action cannot be undone!",
                 icon: "warning",
                 showCancelButton: true,

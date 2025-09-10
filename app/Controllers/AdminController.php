@@ -267,7 +267,7 @@ class AdminController extends BaseController{
                     'action'         => '<a href="'.base_url('customer_view/' . $csdetails['customer_id']).'" target="_blanck" class="btn         btn-sm btn-info" title="View"><i class="fas fa-eye"></i></a>
                                         <a href="'.base_url('customer_edit/' . $csdetails['customer_id']).'" target="_blanck" class="btn btn-sm
                                         btn-primary" title="Edit"><i class="fas fa-edit"></i></a>
-                                        <a href="'.base_url('customer_edit/' . $csdetails['customer_id']).'" target="_blanck" class="btn btn-sm
+                                        <a href="'.base_url('customer_status_edit/' . $csdetails['customer_id']).'" target="_blanck" class="btn btn-sm
                                         btn-warning" title="Status"><i class="fa-solid fa-square-poll-vertical"></i></a>
                                         <a href="'.base_url('customer_edit/' . $csdetails['customer_id']).'" target="_blanck" class="btn btn-sm
                                         btn-secondary" title="Status">A.E</a>
@@ -766,6 +766,22 @@ class AdminController extends BaseController{
         }
     }
 
+    public function customer_status_edit($id){
+        if(!$this->loggedin){
+            return redirect()->to('/login');
+        }
+
+        $customer_details = $this->customers->find($id);
+
+        // echo "<pre>";print_r($customer_details);exit();
+
+        $data = [
+            'customer_details' => $customer_details 
+        ];
+
+        return view('layout/header').view('admin/customer_status_edit',$data).view('layout/footer');
+    }
+
     public function group_details(){
 
         if(!$this->loggedin){
@@ -1076,7 +1092,11 @@ class AdminController extends BaseController{
             if(!empty($request->getPost('group_id'))){
                 $builder->where('c.group_id',$request->getPost('group_id'));
             }
+
             $totalBuilder = $this->db->table('customers c')->select('COUNT(DISTINCT c.customer_id) as total');
+            if(!empty($request->getPost('group_id'))){
+                $totalBuilder->where('c.group_id',$request->getPost('group_id'));
+            }
             $recordsTotal = $totalBuilder->where('c.status', 1)->get()->getRow()->total;
 
 
@@ -1121,6 +1141,8 @@ class AdminController extends BaseController{
 
             $today_month_start = strtotime(date('Y-m-01'));
 
+            $total_due_amount = 0;
+            
             foreach ($customer_details as $key => $csdetails) {
                 $customer_id = $csdetails['customer_id'];
                 $due_amount = $csdetails['due_amount'];
@@ -1236,6 +1258,8 @@ class AdminController extends BaseController{
 					$code_no = $csdetails['month_si'];
                 }
 
+                $total_due_amount += $due_amount;
+
                 $data[$key] = [
                     'customer_id'    => $csdetails['customer_id'],
                     'customer_name'  => $csdetails['book_name'],
@@ -1270,8 +1294,10 @@ class AdminController extends BaseController{
                 'draw' => intval($request->getPost('draw')),
                 'recordsTotal' => $recordsTotal,
                 'recordsFiltered' => $recordsFiltered,
-                'data' => $data
+                'data' => $data,
+                'total_due_amount' => $total_due_amount
             ]);
+
         }else{
             return redirect()->to('/login');
         }

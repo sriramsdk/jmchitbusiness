@@ -80,6 +80,9 @@
                     </tr>
                 </thead>
             </table>
+            <div class="mt-3">
+                <strong>Total Due Amount :</strong> <span id="total_due_field">0</span>
+            </div>
         </div>
     </div>
 </div>
@@ -96,8 +99,12 @@ $(document).ready(function () {
         serverSide: true,
         ajax: {
             url: "<?= site_url('/customers_list_data') ?>",
+            type: "POST",
             data : { group_id : group_id },
-            type: "POST"
+            dataSrc : function (json){
+                $("#total_due_field").text(json.total_due_amount);
+                return json.data;
+            }
         },
         lengthMenu: [ [50, 100, 150], [50, 100, 150] ],
         pageLength: 50,
