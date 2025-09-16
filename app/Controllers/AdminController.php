@@ -574,8 +574,10 @@ class AdminController extends BaseController{
             $cm++;
         }
 
+        $lm=$cm-1;
+
         $total_paid = $amount_entries['total_paid'];
-		$total_amount_had_paid = $cm * $customer_details['due_amount'];
+		$total_amount_had_paid = $lm * $customer_details['due_amount'];
 		$pending_amount = $total_amount_had_paid-$total_paid;
 
         if($pending_amount < 0){
@@ -772,11 +774,16 @@ class AdminController extends BaseController{
         }
 
         $customer_details = $this->customers->find($id);
-
-        // echo "<pre>";print_r($customer_details);exit();
+        
+        $amount_given_details = $this->amount_given_details->where(['customer_id' => $customer_details['customer_id']])->get()->getRowArray();
+        
+        $pending_details = $this->pending_details($id,$customer_details,$amount_given_details);
+        $pending_details_lm = $this->pending_details_lm($id,$customer_details,$amount_given_details);
 
         $data = [
-            'customer_details' => $customer_details 
+            'customer_details' => $customer_details,
+            'pending_details' => $pending_details,
+            'pending_details_lm' => $pending_details_lm 
         ];
 
         return view('layout/header').view('admin/customer_status_edit',$data).view('layout/footer');
@@ -1089,14 +1096,25 @@ class AdminController extends BaseController{
                 ->join('groups g', 'c.group_id = g.group_id', 'left')
                 ->join('colection_by cb', 'c.collection_by = cb.id', 'left')
                 ->where('c.status', 1);
+
             if(!empty($request->getPost('group_id'))){
                 $builder->where('c.group_id',$request->getPost('group_id'));
             }
 
+            if(!empty($request->getPost('customer_id'))){
+                $builder->where('c.customer_id',$request->getPost('customer_id'));
+            }
+            
             $totalBuilder = $this->db->table('customers c')->select('COUNT(DISTINCT c.customer_id) as total');
+
             if(!empty($request->getPost('group_id'))){
                 $totalBuilder->where('c.group_id',$request->getPost('group_id'));
             }
+
+            if(!empty($request->getPost('customer_id'))){
+                $totalBuilder->where('c.customer_id',$request->getPost('customer_id'));
+            }
+
             $recordsTotal = $totalBuilder->where('c.status', 1)->get()->getRow()->total;
 
 
@@ -1114,8 +1132,13 @@ class AdminController extends BaseController{
                 ->join('groups g', 'c.group_id = g.group_id', 'left')
                 ->join('colection_by cb', 'c.collection_by = cb.id', 'left')
                 ->where('c.status', 1);
+
             if(!empty($request->getPost('group_id'))){
                 $filteredBuilder->where('c.group_id',$request->getPost('group_id'));
+            }
+
+            if(!empty($request->getPost('customer_id'))){
+                $filteredBuilder->where('c.customer_id',$request->getPost('customer_id'));
             }
 
             if (!empty($search)) {
